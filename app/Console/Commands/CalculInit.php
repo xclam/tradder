@@ -59,7 +59,20 @@ class CalculInit extends Command
 			if($i<=1)
 				continue;
 			
-			$average = min(50,round((array_sum($cf_var)/count($cf_var)),2));
+			// $average = min(50,round((array_sum($cf_var)/count($cf_var)),2));
+			// if($average <= 0 )
+				// continue;
+			
+			$average = 0;
+			$serie = 0;
+			for($i=0;$i<count($cf_var);$i++){
+				$average = $average + $cf_var[$i+1] * ($i+1);
+				$serie += ($i + 1);
+			}
+			$average = min(50,$average / $serie);
+			if($average <= 0 )
+				continue;
+			
 			$max = min(50,round(max($cf_var),2))/10;
 			$min = max(-50,round(min($cf_var),2))/10;
 			
