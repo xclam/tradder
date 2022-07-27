@@ -36,10 +36,11 @@ class CalculInit extends Command
 		if(!is_null($symbol)){
 			$stocks = Stock::where("Symbol",$symbol)->get();
 		}else{
-			$stocks = Stock::where("AssetType","<>","ETF")->get();
+			$stocks = Stock::where("AssetType","<>","ETF")->where("OperatingCashflowLastQuarter",">",0)->get();
 		}
 		
 		foreach($stocks as $stock){
+			
 			$i=0;
 			$average = 0;
 			$max = 0;
@@ -58,9 +59,9 @@ class CalculInit extends Command
 			if($i<=1)
 				continue;
 			
-			$average = min(100,round((array_sum($cf_var)/count($cf_var)),2));
-			$max = min(100,round(max($cf_var),2));
-			$min = max(-100,round(min($cf_var),2));
+			$average = min(50,round((array_sum($cf_var)/count($cf_var)),2));
+			$max = min(50,round(max($cf_var),2))/10;
+			$min = max(-50,round(min($cf_var),2))/10;
 			
 			DB::table('intrinsic_values')->upsert(
 				[

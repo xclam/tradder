@@ -46,7 +46,7 @@ class FetchStockValue extends Command
 		$stock_balance = API::getBalanceSheet($stock->Symbol);
 		$stock_cash_flow = API::getCashFlow($stock->Symbol);
 		
-		if(isset($stock_cash_flow["quarterlyReports"])){
+		if(isset($stock_cash_flow["quarterlyReports"]) and $stock_cash_flow["quarterlyReports"][0]->operatingCashflow !== 'None'){
 			$stock_merged = array_merge($stock_value, $stock_detail, ["OperatingCashflowLastQuarter" => $stock_cash_flow["quarterlyReports"][0]->operatingCashflow+$stock_cash_flow["quarterlyReports"][1]->operatingCashflow+$stock_cash_flow["quarterlyReports"][2]->operatingCashflow+$stock_cash_flow["quarterlyReports"][3]->operatingCashflow]);
 		}else{
 			$stock->where('Symbol',$stock->Symbol)->update(['Status'=>'inactive']);
