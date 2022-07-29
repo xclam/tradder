@@ -40,7 +40,7 @@ class CalculInit extends Command
 		}
 		
 		foreach($stocks as $stock){
-			
+	
 			$i=0;
 			$average = 0;
 			$max = 0;
@@ -51,8 +51,10 @@ class CalculInit extends Command
 					continue;
 				
 				$cf[$i] = $cash_flow->operatingCashflow;
+				
 				if($i>0){
-					$cf_var[$i] = $cf[$i]*100/$cf[$i-1]-100;
+					$cf_var[$i] = (($cf[$i]*100-$cf[$i-1])/abs($cf[$i-1]))*100;
+
 				}
 				$i++;
 			}
@@ -62,34 +64,44 @@ class CalculInit extends Command
 			// $average = min(50,round((array_sum($cf_var)/count($cf_var)),2));
 			// if($average <= 0 )
 				// continue;
-			
+
 			$average = 0;
 			$serie = 0;
 			for($i=0;$i<count($cf_var);$i++){
-				$average = $average + $cf_var[$i+1] * ($i+1);
+				$average = $average + ($cf_var[$i+1] * ($i+1));
 				$serie += ($i + 1);
 			}
-			$average = min(50,$average / $serie);
+	
+			$average = min(50,$average / $serie) * 0.5;
 			if($average <= 0 )
 				continue;
 			
-			$max = min(50,round(max($cf_var),2))/10;
-			$min = max(-50,round(min($cf_var),2))/10;
+			$max = $average*min(2,(1+((max($cf_var)-$average)/$average)/100));
+
+			// $min = $average*max(-1.5,(1-(($average-min($cf_var)/abs(min($cf_var)))/100)));
+			$min = (min(2,abs(((max($cf_var)-$average)/$average)/100))*-1);
 			
 			DB::table('intrinsic_values')->upsert(
 				[
 					[
 						'symbol' => $stock->Symbol, 
-						'normal_0-5' => $average, 'normal_6-10' => $average/2,
-						'best_0-5' => $average*(1+$max/100), 'best_6-10' => $average*(1+$max/100)/2,
-						'worst_0-5' => $average*(1+(($min*100/$average)-100)/100), 'worst_6-10' => $average*(1+((($min-5)*100/$average)-100)/100),
-						'normal_terminalMultiplier' => min(100,$stock->EVToEBITDA),
-						'best_terminalMultiplier' => min(100,$stock->EVToEBITDA*(1+0.5)),
-						'worst_terminalMultiplier' => min(100,$stock->EVToEBITDA*(1-0.5)),
+						'normal_0-5' => $average,
+						'normal_6-10' => $average/2,
+						// 'best_0-5' => $average*(1+$max/100),
+						'best_0-5' => $max,
+						// 'best_6-10' => $average*(1+$max/100)/2,
+						'best_6-10' => $max/2,
+						// 'worst_0-5' => $average*(1+(($min*100/$average)-100)/100), 
+						'worst_0-5' => $average*$min, 
+						// 'worst_6-10' => $average*(1+((($min-5)*100/$average)-100)/100),
+						'worst_6-10' => $average*$min*2,
+						'normal_terminalMultiplier' => max(1,$stock->EVToEBITDA),
+						'best_terminalMultiplier' => max(1,$stock->EVToEBITDA*(1+0.5)),
+						'worst_terminalMultiplier' => min(50,max(1,$stock->EVToEBITDA*(1-0.5))),
 						'normal_discountRate' => 15, 'normal_ponderation' => 50,
 						'best_discountRate' => 15, 'best_ponderation' => 25,
 						'worst_discountRate' => 15, 'worst_ponderation' => 25,
-						'cashflow' => $stock->OperatingCashflowLastQuarter,
+						'cashflow' => $stock->OperatingCashflowLastQuarter ,
 					]
 				],
 				['symbol'],

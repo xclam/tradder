@@ -48,12 +48,13 @@ class AlphaVantageAPI extends Model
 
 		$result = json_decode($result);
 		$result = (array)$result->{'Global Quote'};
-		
+
 		foreach($result as $key=>$val){
-			$result[Str::camel($key)] = $val;
-			unset($result[$key]);
+			if($key != Str::camel($key)){
+				$result[Str::camel($key)] = $val;
+				unset($result[$key]);
+			}
 		}
-		
 		return $result;
 	}
 	

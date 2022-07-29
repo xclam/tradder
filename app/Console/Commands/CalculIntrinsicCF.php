@@ -71,7 +71,7 @@ class CalculIntrinsicCF extends Command
 			
 			$shares = DB::table('stocks')->select("SharesOutstanding")->where('symbol',$iv->symbol)->get();
 			
-			$iv->cf_value = ($iv->cf_n_value * $iv->normal_ponderation / 100 + $iv->cf_b_value * $iv->best_ponderation / 100 + $iv->cf_w_value * $iv->worst_ponderation / 100) / $shares[0]->SharesOutstanding;
+			$iv->cf_value = (($iv->cf_n_value * $iv->normal_ponderation / 100) + ($iv->cf_b_value * $iv->best_ponderation / 100) + ($iv->cf_w_value * $iv->worst_ponderation / 100)) / $shares[0]->SharesOutstanding;
 			
 			unset($iv->cf_n_0,$iv->cf_b_0,$iv->cf_w_0);
 			

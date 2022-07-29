@@ -38,17 +38,28 @@ class FetchStockValue extends Command
 		// $stocks = Stock::orderBy('updated_at', 'asc')->limit(5)->get();
 		$stock = Stock::where('Status','=','Active')->orderBy('updated_at', 'asc')->limit(1)->first();
 		
-		// $stock = Stock::where(["Symbol"=>"AJG"])->first();
+		// $stock = Stock::where(["Symbol"=>"LGL"])->first();
 		
 		\Log::info("Fetching $stock->Symbol");
 		$stock_value = API::getQuote($stock->Symbol);
 		$stock_detail = API::getOverview($stock->Symbol);
 		$stock_balance = API::getBalanceSheet($stock->Symbol);
 		$stock_cash_flow = API::getCashFlow($stock->Symbol);
-		
-		if(isset($stock_cash_flow["quarterlyReports"]) and $stock_cash_flow["quarterlyReports"][0]->operatingCashflow !== 'None'){
-			$stock_merged = array_merge($stock_value, $stock_detail, ["OperatingCashflowLastQuarter" => $stock_cash_flow["quarterlyReports"][0]->operatingCashflow+$stock_cash_flow["quarterlyReports"][1]->operatingCashflow+$stock_cash_flow["quarterlyReports"][2]->operatingCashflow+$stock_cash_flow["quarterlyReports"][3]->operatingCashflow]);
+	
+		if(isset($stock_cash_flow["quarterlyReports"]) /*and $stock_cash_flow["quarterlyReports"][0]->operatingCashflow !== 'None'*/){
+			$OperatingCashflowLastQuarter = 0;
+			for($i=0;$i<4;$i++){
+				if(isset($stock_cash_flow["quarterlyReports"][$i]) and $stock_cash_flow["quarterlyReports"][$i]->operatingCashflow !== 'None'){
+					$OperatingCashflowLastQuarter += (is_numeric($stock_cash_flow["quarterlyReports"][0]->operatingCashflow) ? $stock_cash_flow["quarterlyReports"][0]->operatingCashflow: 0);
+				}
+			}
+			$stock_merged = array_merge($stock_value, $stock_detail, ["OperatingCashflowLastQuarter" => $OperatingCashflowLastQuarter]);
 		}else{
+			if(!isset($stock_cash_flow["quarterlyReports"])){
+				\Log::info("quarterlyReports is empty");
+				var_dump($stock_cash_flow);
+			}else
+				\Log::info("quarterlyReports NaN");
 			$stock->where('Symbol',$stock->Symbol)->update(['Status'=>'inactive']);
 			return 0;
 		}
